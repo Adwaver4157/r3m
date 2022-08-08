@@ -1,17 +1,17 @@
-ARG UBUNTU_VERSION=18.04
+ARG UBUNTU_VERSION=20.04
 
 ARG ARCH=
-ARG CUDA=11.0
-FROM nvidia/cuda${ARCH:+-$ARCH}:${CUDA}.3-base-ubuntu${UBUNTU_VERSION} as base
+ARG CUDA=11.2
+FROM nvidia/cudagl${ARCH:+-$ARCH}:${CUDA}.2-base-ubuntu${UBUNTU_VERSION} as base
 # ARCH and CUDA are specified again because the FROM directive resets ARGs
 # (but their default value is retained if set previously)
 ARG ARCH
 ARG CUDA
-ARG CUDNN=8.0.4.30-1
+ARG CUDNN=8.1.1.33-1
 ARG CUDNN_MAJOR_VERSION=8
 ARG LIB_DIR_PREFIX=x86_64
-ARG LIBNVINFER=7.1.3-1
-ARG LIBNVINFER_MAJOR_VERSION=7
+ARG LIBNVINFER=8.0.0-1
+ARG LIBNVINFER_MAJOR_VERSION=8
 
 # Needed for string substitution
 SHELL ["/bin/bash", "-l", "-c"]
@@ -20,7 +20,7 @@ RUN apt-key del 7fa2af80
 RUN apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/3bf863cc.pub
 RUN apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu2004/x86_64/7fa2af80.pub
 # Pick up some TF dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
         build-essential \
         cuda-command-line-tools-${CUDA/./-} \
         libcublas-${CUDA/./-} \
@@ -40,8 +40,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # Install TensorRT if not building for PowerPC
 RUN [[ "${ARCH}" = "ppc64le" ]] || { apt-get update && \
-        apt-get install -y --no-install-recommends libnvinfer${LIBNVINFER_MAJOR_VERSION}=${LIBNVINFER}+cuda${CUDA} \
-        libnvinfer-plugin${LIBNVINFER_MAJOR_VERSION}=${LIBNVINFER}+cuda${CUDA} \
+        DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends libnvinfer${LIBNVINFER_MAJOR_VERSION}=${LIBNVINFER}+cuda11.0 \
+        libnvinfer-plugin${LIBNVINFER_MAJOR_VERSION}=${LIBNVINFER}+cuda11.0 \
         && apt-get clean \
         && rm -rf /var/lib/apt/lists/*; }
 
@@ -55,7 +55,7 @@ RUN ln -s /usr/local/cuda/lib64/stubs/libcuda.so /usr/local/cuda/lib64/stubs/lib
     && ldconfig
 
 # bug (4 Aug 2020)
-RUN ln -s /usr/local/cuda-11.0/targets/x86_64-linux/lib/libcusolver.so.10 /usr/local/cuda-11.0/targets/x86_64-linux/lib/libcusolver.so.11
+# RUN ln -s /usr/local/cuda-11.0/targets/x86_64-linux/lib/libcusolver.so.10 /usr/local/cuda-11.0/targets/x86_64-linux/lib/libcusolver.so.11
 
 
 # pyenv (from [2]) ----------------
@@ -85,7 +85,7 @@ RUN echo 'alias vnc="export DISPLAY=:0; Xvfb :0 -screen 0 1400x900x24 & x11vnc -
 RUN source /root/.bash_profile && \
     pip install setuptools jupyterlab && \
     pip install tensorflow && \
-    pip install pip install torch==1.9.0+cu111 torchvision==0.10.0+cu111 torchaudio==0.9.0 -f https://download.pytorch.org/whl/torch_stable.html && \
+    pip3 install torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu113 && \
     echo 'alias jl="jupyter lab --ip 0.0.0.0 --port 8888 --NotebookApp.token='' --allow-root &"' >> /root/.bashrc && \
     echo 'alias tb="tensorboard --host 0.0.0.0 --port 6006 --logdir runs &"' >> /root/.bashrc
 
