@@ -159,12 +159,13 @@ RUN cd / && \
     cd metaworld && \
     source /root/.bash_profile && \
     sed -i -e 's/mujoco-py<2.1,>=2.0/mujoco-py/' setup.py && \
+    sed -i -e 's/gym>=0.15.4/gym==0.20.0/' setup.py && \
     pip install -e . && \ 
     cd / && \
     git clone https://github.com/vikashplus/mj_envs.git && \
     cd mj_envs && \
     source /root/.bash_profile && \
-    sed -i -e 's/gym==0.13/gym/' setup.py && \
+    sed -i -e 's/gym==0.13/gym==0.20.0/' setup.py && \
     sed -i -e 's/mujoco-py<2.1,>=2.0/mujoco-py/' setup.py && \
     pip install -e .
 
