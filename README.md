@@ -6,11 +6,46 @@ This project studies how to learn generalizable visual representation for roboti
 
 ## Installation
 
-To install R3M from an existing conda environment, simply run `pip install -e .` from this directory. 
+### How to reproduce BC with R3M
+1. Clone a forked version of r3m repository
+```bash
+git clone -b reproduce https://github.com/Adwaver4157/r3m.git
+```
 
-You can alternatively build a fresh conda env from the r3m_base.yaml file [here](https://github.com/facebookresearch/r3m/blob/main/r3m/r3m_base.yaml) and then install from this directory with `pip install -e .`
+2. Download datasets, in this example, download drawer-open[left] demo dataset
+```bash
+cd r3m
+mkdir -p dataset/final_paths_multiview_meta_200/left_cap2
+cd dataset/final_paths_multiview_meta_200/left_cap2
+wget --load-cookies /tmp/cookies.txt "https://docs.google.com/uc?export=download&confirm=$(wget --quiet --save-cookies /tmp/cookies.txt --keep-session-cookies --no-check-certificate 'https://docs.google.com/uc?export=download&id=1237SZJY24IWpqEUZ4qMQOXaccciMg9Ze' -O- | sed -rn 's/.*confirm=([0-9A-Za-z_]+).*/\1\n/p')&id=1237SZJY24IWpqEUZ4qMQOXaccciMg9Ze" -O drawer-open-v2-goal-observable.pickle && rm -rf /tmp/cookies.txt
+cd ../../../
+```
 
-You can test if it has installed correctly by running `import r3m` from a python shell.
+3. Clone [this image](https://hub.docker.com/repository/docker/adwaver4157/r3m) and run docker container
+```bash
+docker pull adwaver4157/r3m:latest
+docker run -it --rm --name username_r3m \
+               --gpus all --shm-size=16gb \
+               --net=host \
+               --mount type=bind,source="$(pwd)",target=/root/workspace \
+               adwaver4157/r3m:latest
+```
+
+4. Install some libraries in Docker container
+```bash
+bash install.sh
+```
+
+5. Run BC file
+```bash
+cd evaluation
+python r3meval/core/launcher.py
+```
+
+If you get some pytorch errors, you should try to reinstall pytorch as follows then you may become able to run the script.
+```bash
+pip3 install torch==1.8.2 torchvision==0.9.2 torchaudio==0.8.2 --extra-index-url https://download.pytorch.org/whl/lts/1.8/cu111
+```
 
 ## Using the representation
 
@@ -25,17 +60,6 @@ Further example code to use a pre-trained representation is located in the examp
 
 If you have any issue accessing or downloading R3M please contact Suraj Nair: surajn (at) stanford (dot) edu
 
-## Training the representation
-
-To train the representation run:
-
-`python train_representation.py hydra/launcher=local hydra/output=local agent.langweight=1.0 agent.size=50 experiment=r3m_test dataset=ego4d doaug=rctraj agent.l1weight=0.00001 batch_size=16 datapath=<PATH TO PARSED Ego4D DATA> wandbuser=<WEIGHTS AND BIASES USER> wandbproject=<WEIGHTS AND BIASES PROJECT>`
- 
-Note: For fast training, the Ego4D data loading code assumes that the dataset has been parsed into frames, with a folder for each video clip and frames of the videoclip (resized to [224 x 224]) numbered within the directory (for example `000123.jpg`). It also assumes a file called `manifest.csv` which has a row for each clip, with the path to the clip folder, the clip length, and the natural language pairing for the clip. 
- 
-## Evaluating the representation with behavior cloning
-
-Code coming soon!
 
 ## License
 
